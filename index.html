@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catches Win Championships</title>
+<meta name="description" content="A catching game for Nina.">
+<meta property="og:title" content="Catches Win Championships, for Nina">
+<meta property="og:image" content="https://gordonusc.github.io/gift-nina/img/hero.jpg">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@500;700&display=swap">
+<style>
+:root{--red:#e63946;--blue:#2b59c3;--gold:#ffd166;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#07070d;color:#fff;font:16px/1.4 Barlow,system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
+.stage{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:min(100vw,calc(100svh*9/16));overflow:hidden}
+.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.hud{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 14px);display:flex;justify-content:space-between;padding:0 16px;font-weight:700;letter-spacing:.2em;font-size:12px;text-shadow:0 2px 8px #000}
+.hud b{display:block;font:400 30px "Archivo Black",sans-serif;letter-spacing:0}
+.card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(#0008,#000d)}
+.card[hidden]{display:none}
+.card small{letter-spacing:.32em;font-weight:700;color:var(--gold);font-size:12px}
+.card h1{font:400 clamp(36px,11vw,58px)/1 "Archivo Black",sans-serif;margin:10px 0}
+.card h1 em{font-style:normal;color:var(--red)}
+.card p{max-width:28ch;margin:0 auto;opacity:.9}
+.go{margin-top:20px;font:400 20px "Archivo Black",sans-serif;padding:13px 28px;border-radius:999px;border:0;background:var(--red);color:#fff;cursor:pointer;box-shadow:0 6px 0 #8d1a24}
+.medal{font-size:64px;line-height:1;margin-bottom:6px}
+.foot{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);text-align:center;font-size:11px;opacity:.65}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <img class="bg" src="img/hero.jpg" alt="A dodgeball arena with red balls on the center line under spotlights">
+  <canvas id="c"></canvas>
+  <div class="hud"><div>Catches<b id="n">0</b></div><div style="text-align:right">Goal<b>10</b></div></div>
+  <div class="card" id="intro"><small>FOR NINA · #1</small><h1>CATCHES WIN <em>CHAMPIONSHIPS</em></h1><p>You know this better than anyone. Tap each ball before it gets past you.</p><button class="go" id="go">READY</button></div>
+  <div class="card" id="win" hidden><div class="medal">🥇</div><small>TEN CATCHES</small><h1>COACH <em>FIORE</em></h1><p>Gordon is so glad you're in his corner, and on his court.</p><button class="go" id="again">AGAIN</button></div>
+  <div class="foot">made by Darby, Gordon's AI assistant, with love from Gordon</div>
+</div>
+<script>
+// ElevenLabs sound design: throw whoosh, catch, whistle and roar. Code only mixes.
+let ac=null, master=null, bufs={};
+function audio(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); master=ac.createGain(); master.gain.value=.9; master.connect(ac.destination); ['whoosh','catch','roar'].forEach(load);}catch(e){} } if(ac&&ac.state==='suspended') ac.resume(); return ac; }
+async function load(n){ if(bufs[n]) return bufs[n]; try{ const r=await fetch('snd/'+n+'.mp3'); const a=await r.arrayBuffer(); bufs[n]=await new Promise((ok,no)=>ac.decodeAudioData(a,ok,no)); }catch(e){} return bufs[n]; }
+async function play(n,vol=1,rate=1){ if(!audio()) return; const b=await load(n); if(!b) return; const s=ac.createBufferSource(), g=ac.createGain(); s.buffer=b; s.playbackRate.value=rate; g.gain.value=vol; s.connect(g).connect(master); s.start(); }
+const c=document.getElementById('c'), x=c.getContext('2d'), D=Math.min(devicePixelRatio||1,2);
+function size(){ c.width=c.clientWidth*D; c.height=c.clientHeight*D; } size(); addEventListener('resize',size);
+let balls=[], bursts=[], caught=0, live=false, next=0;
+function spawn(){ const w=c.width,h=c.height; const sx=w*(.2+Math.random()*.6), tx=w*(.15+Math.random()*.7); balls.push({x:sx,y:h*.42,tx,ty:h*1.05,t:0,dur:1.6-Math.min(caught,8)*.07,r:16*D}); play('whoosh',.6,.9+Math.random()*.2); }
+c.addEventListener('pointerdown',e=>{ if(!live) return; const r=c.getBoundingClientRect(), px=(e.clientX-r.left)*D, py=(e.clientY-r.top)*D;
+  for(let i=balls.length-1;i>=0;i--){ const b=balls[i]; if(Math.hypot(b.x-px,b.y-py)<b.r*2.6){ balls.splice(i,1); caught++; document.getElementById('n').textContent=caught; play('catch',1,.95+Math.random()*.1); for(let k=0;k<16;k++){ const a=Math.random()*6.28; bursts.push({x:b.x,y:b.y,vx:Math.cos(a)*6*D,vy:Math.sin(a)*6*D,a:1}); } if(caught>=10) win(); return; } } });
+function win(){ live=false; balls=[]; play('roar',.85); setTimeout(()=>document.getElementById('win').hidden=false,600); }
+function start(){ audio(); caught=0; document.getElementById('n').textContent=0; balls=[]; live=true; next=performance.now()+400; document.getElementById('intro').hidden=true; document.getElementById('win').hidden=true; }
+document.getElementById('go').onclick=start; document.getElementById('again').onclick=start;
+(function loop(now){ x.clearRect(0,0,c.width,c.height);
+  if(live&&now>next){ spawn(); next=now+900-Math.min(caught,8)*50; }
+  balls.forEach(b=>{ b.t+=1/60/b.dur; const k=b.t; b.x=b.x+(b.tx-b.x)*.04; b.y=c.height*.42+(b.ty-c.height*.42)*k*k; b.r=(16+44*k)*D;
+    const g=x.createRadialGradient(b.x-b.r*.3,b.y-b.r*.3,b.r*.1,b.x,b.y,b.r); g.addColorStop(0,'#ff8a8a'); g.addColorStop(1,'#b3121f'); x.fillStyle=g; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill(); });
+  balls=balls.filter(b=>b.t<1);
+  bursts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.a-=.04; x.globalAlpha=Math.max(p.a,0); x.fillStyle='#ffd166'; x.fillRect(p.x,p.y,4*D,4*D); }); x.globalAlpha=1; bursts=bursts.filter(p=>p.a>0);
+  requestAnimationFrame(loop); })(0);
+</script>
+</body>
+</html>

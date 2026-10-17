@@ -1,0 +1,18 @@
+{
+ "img/hero.jpg": {
+  "tool": "higgsfield",
+  "prompt": "dodgeball arena, red balls on center line (job ae3f87a3) gpt_image_2_5"
+ },
+ "snd/whoosh.mp3": {
+  "tool": "elevenlabs",
+  "prompt": "dodgeball thrown fast whoosh (flow bX2H09497IjBrndYnMmJ)"
+ },
+ "snd/catch.mp3": {
+  "tool": "elevenlabs",
+  "prompt": "dodgeball caught against chest (flow bX2H09497IjBrndYnMmJ)"
+ },
+ "snd/roar.mp3": {
+  "tool": "elevenlabs",
+  "prompt": "whistle then arena roar (flow bX2H09497IjBrndYnMmJ)"
+ }
+}
